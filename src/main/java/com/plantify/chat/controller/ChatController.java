@@ -9,6 +9,8 @@ import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
+import java.util.concurrent.CompletableFuture;
+
 @Controller
 @RequiredArgsConstructor
 public class ChatController {
@@ -19,14 +21,23 @@ public class ChatController {
     @MessageMapping("/chat.sendMessage")
     @SendTo("/topic/public")
     public ChatMessage sendMessage(ChatMessage chatMessage) {
+        chatMessage.setType(MessageType.CHAT);
 
-        ChatMessage response = ChatMessage.builder()
-                .sender("AI")
-                .message(chatService.generateResponse(chatMessage.getMessage()))
-                .type(MessageType.CHAT)
-                .build();
+        CompletableFuture.runAsync(() -> {
+            try {
+                Thread.sleep(500);
 
-        messagingTemplate.convertAndSend("/topic/public", response);
+                ChatMessage aiResponse = ChatMessage.builder()
+                        .sender("AI")
+                        .message(chatService.generateResponse(chatMessage.getMessage()))
+                        .type(MessageType.CHAT)
+                        .build();
+
+                messagingTemplate.convertAndSend("/topic/public", aiResponse);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        });
         return chatMessage;
     }
 
