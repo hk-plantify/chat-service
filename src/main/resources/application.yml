@@ -1,3 +1,9 @@
 spring:
   application:
     name: chat
+
+server:
+  port: 8080
+
+fastapi:
+  url: "http://localhost:8000/chat"
