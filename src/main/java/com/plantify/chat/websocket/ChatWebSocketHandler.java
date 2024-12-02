@@ -9,7 +9,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.socket.WebSocketHandler;
 import org.springframework.web.reactive.socket.WebSocketSession;
 import org.springframework.web.reactive.socket.WebSocketMessage;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.SignalType;
 
 @Component
 @RequiredArgsConstructor
@@ -21,7 +23,7 @@ public class ChatWebSocketHandler implements WebSocketHandler {
     public Mono<Void> handle(WebSocketSession session) {
         ObjectMapper objectMapper = new ObjectMapper();
 
-        return session.receive()
+        Flux<WebSocketMessage> messageFlux = session.receive()
                 .map(WebSocketMessage::getPayloadAsText)
                 .flatMap(payload -> {
                     try {
@@ -35,12 +37,12 @@ public class ChatWebSocketHandler implements WebSocketHandler {
                                 .build();
 
                         String response = objectMapper.writeValueAsString(aiMessage);
-                        return session.send(Mono.just(session.textMessage(response)));
-
+                        return Mono.just(session.textMessage(response));
                     } catch (Exception e) {
-                        return Mono.error(new RuntimeException("메시지 형식에 맞지 않습니다."));
+                        return Mono.error(new RuntimeException("메시지 처리 실패"));
                     }
-                })
-                .then();
+                });
+
+        return session.send(messageFlux);
     }
 }

@@ -1,26 +1,44 @@
-let stompClient = null;
+let socket = null;
 
 window.onload = connect;
 
 function connect() {
-    const socket = new SockJS('/chat');
-    stompClient = Stomp.over(socket);
+    const socket = new WebSocket("/ws/chat");
 
-    stompClient.connect({}, function (frame) {
-        console.log('Connected: ' + frame);
+    socket.onopen = function () {
+        console.log("Connected to WebSocket server");
+    };
 
-        stompClient.subscribe('/topic/public', function (messageOutput) {
-            const messageData = JSON.parse(messageOutput.body);
-            showMessage(messageData.sender, messageData.message, messageData.sender === "AI" ? "message-received" : "message-sent");
-        });
-    });
+    socket.onmessage = function (event) {
+        const messageData = JSON.parse(event.data);
+        showMessage(messageData.sender, messageData.message, messageData.sender === "AI" ? "message-received" : "message-sent");
+    };
+
+    socket.onclose = function () {
+        console.log("WebSocket connection closed");
+        setTimeout(connect, 3000);
+    };
+
+    socket.onerror = function (error) {
+        console.error("WebSocket error:", error);
+    };
 }
 
 function sendMessage() {
     const messageContent = document.getElementById("message").value;
-    if (messageContent && stompClient) {
-        stompClient.send("/app/chat.sendMessage", {}, JSON.stringify({sender: "User", message: messageContent}));
-        document.getElementById("message").value = '';
+    if (messageContent) {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            showMessage("User", messageContent, "message-sent");
+            const message = {
+                sender: "User",
+                message: messageContent
+            };
+            socket.send(JSON.stringify(message));
+            document.getElementById("message").value = '';
+        } else {
+            console.error("WebSocket is not connected");
+            alert("WebSocket 연결이 끊어졌습니다. 다시 시도하세요.");
+        }
     }
 }
 
