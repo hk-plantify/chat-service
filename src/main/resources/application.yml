@@ -1,9 +1,12 @@
 spring:
   application:
     name: chat
-
-server:
-  port: 8080
-
-fastapi:
-  url: "http://localhost:8000/chat"
+  main:
+    web-application-type: reactive
+  web:
+    resources:
+      add-mappings: true
+      static-locations: classpath:/static/
+grpc:
+  server:
+    address: localhost:50051
