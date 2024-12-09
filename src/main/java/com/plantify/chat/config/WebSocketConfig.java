@@ -23,9 +23,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         Map<String, WebSocketHandler> map = new HashMap<>();
         map.put("/ws/chat", chatWebSocketHandler);
 
-        SimpleUrlHandlerMapping handlerMapping = new SimpleUrlHandlerMapping();
-        handlerMapping.setOrder(-1);
-        handlerMapping.setUrlMap(map);
         return new SimpleUrlHandlerMapping(map, -1);
     }
 
