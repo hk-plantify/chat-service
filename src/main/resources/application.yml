@@ -9,4 +9,4 @@ spring:
       static-locations: classpath:/static/
 grpc:
   server:
-    address: chat-model.chat.svc:30598
+    address: chat-model.chat.svc.cluster.local:50052

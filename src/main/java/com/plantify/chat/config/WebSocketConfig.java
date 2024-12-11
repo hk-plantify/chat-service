@@ -21,7 +21,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Bean
     public HandlerMapping webSocketMapping(ChatWebSocketHandler chatWebSocketHandler) {
         Map<String, WebSocketHandler> map = new HashMap<>();
-        map.put("/ws/chat", chatWebSocketHandler);
+        map.put("/chat", chatWebSocketHandler);
 
         return new SimpleUrlHandlerMapping(map, -1);
     }
