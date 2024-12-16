@@ -13,11 +13,19 @@ public class GrpcConfig {
     @Value("${grpc.server.address}")
     private String grpcServerAddress;
 
+//    @Bean
+//    public ChatServiceGrpc.ChatServiceBlockingStub chatServiceBlockingStub() {
+//        ManagedChannel channel = ManagedChannelBuilder.forTarget(grpcServerAddress)
+//                .usePlaintext()
+//                .build();
+//        return ChatServiceGrpc.newBlockingStub(channel);
+//    }
+
     @Bean
-    public ChatServiceGrpc.ChatServiceBlockingStub chatServiceBlockingStub() {
+    public ChatServiceGrpc.ChatServiceStub chatServiceStub() {
         ManagedChannel channel = ManagedChannelBuilder.forTarget(grpcServerAddress)
                 .usePlaintext()
                 .build();
-        return ChatServiceGrpc.newBlockingStub(channel);
+        return ChatServiceGrpc.newStub(channel);
     }
 }
