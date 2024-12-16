@@ -10,3 +10,9 @@ spring:
 grpc:
   server:
     address: chat-model.chat.svc.cluster.local:50052
+
+client:
+  base:
+    url: ENC(6glvmh8vfHd2D/ALcgqR+tXcm+DH+AZbkofU7nK5p2eE0RzPXoNE1uHTORYrT/dA)
+  pay:
+    url: ENC(YKKOs+X8eUEdzzngWa8yjQlR4W0uy69aKFe1AMAee9FP2nauBEWpCM6FyDXpbIprBGi7LReqA4M=)
