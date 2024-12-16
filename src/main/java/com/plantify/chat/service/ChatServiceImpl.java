@@ -2,35 +2,18 @@ package com.plantify.chat.service;
 
 import com.plantify.pb.unit.chat.ChatRequest;
 import com.plantify.pb.unit.chat.ChatServiceGrpc;
-import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import com.plantify.pb.unit.chat.ChatResponse;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
 
 @Service
 @RequiredArgsConstructor
 public class ChatServiceImpl implements ChatService {
 
     private final ChatServiceGrpc.ChatServiceStub chatServiceStub;
-
-//    @Override
-//    public String generateResponse(String userMessage) {
-//        try {
-//            ChatRequest request = ChatRequest.newBuilder()
-//                    .setMessage(userMessage)
-//                    .setSender("User")
-//                    .build();
-//
-//            ChatResponse response = chatServiceStub.sendMessage(request);
-//            return response.getReply();
-//        } catch (StatusRuntimeException e) {
-//            return "AI 서버와의 통신 중 오류 발생: " + e.getStatus().getDescription();
-//        } catch (Exception e) {
-//            return "알 수 없는 오류 발생: " + e.getMessage();
-//        }
-//    }
 
     @Override
     public Flux<String> streamResponse(String userMessage) {
@@ -43,22 +26,33 @@ public class ChatServiceImpl implements ChatService {
             StreamObserver<ChatResponse> responseObserver = new StreamObserver<>() {
                 @Override
                 public void onNext(ChatResponse response) {
-                    sink.next(response.getReply());
+                    if (!sink.isCancelled()) {
+                        sink.next(response.getReply());
+                    }
                 }
 
                 @Override
                 public void onError(Throwable t) {
-                    sink.error(t);
+                    if (!sink.isCancelled()) {
+                        sink.error(t);
+                    }
                 }
 
                 @Override
                 public void onCompleted() {
-                    sink.complete();
+                    if (!sink.isCancelled()) {
+                        sink.complete();
+                    }
                 }
             };
 
-            chatServiceStub.streamMessage(request, responseObserver);
-        });
+            try {
+                chatServiceStub.streamMessage(request, responseObserver);
+            } catch (Exception e) {
+                sink.error(e);
+            }
+        }, FluxSink.OverflowStrategy.BUFFER);
     }
+
 }
 

@@ -28,17 +28,6 @@ public class ChatWebSocketHandler implements WebSocketHandler {
                 .flatMap(payload -> {
                     try {
                         ChatMessage userMessage = objectMapper.readValue(payload, ChatMessage.class);
-//                        String aiResponse = chatService.generateResponse(userMessage.getMessage());
-//
-//                        ChatMessage aiMessage = ChatMessage.builder()
-//                                .sender("AI")
-//                                .message(aiResponse)
-//                                .type(MessageType.CHAT)
-//                                .build();
-//
-//                        String response = objectMapper.writeValueAsString(aiMessage);
-//                        return Mono.just(session.textMessage(response));
-
                         return chatService.streamResponse(userMessage.getMessage())
                                 .map(reply -> {
                                     try {
@@ -47,17 +36,17 @@ public class ChatWebSocketHandler implements WebSocketHandler {
                                                 .message(reply)
                                                 .type(MessageType.CHAT)
                                                 .build();
-                                        return objectMapper.writeValueAsString(aiMessage);
+                                        return session.textMessage(objectMapper.writeValueAsString(aiMessage));
                                     } catch (JsonProcessingException e) {
                                         throw new RuntimeException("JSON 직렬화 실패", e);
                                     }
-                                })
-                                .map(session::textMessage);
+                                });
                     } catch (Exception e) {
                         return Mono.error(new RuntimeException("메시지 처리 실패"));
                     }
                 });
 
-        return session.send(messageFlux);
+        return session.send(messageFlux.onErrorResume(e -> Mono.empty()));
     }
+
 }
