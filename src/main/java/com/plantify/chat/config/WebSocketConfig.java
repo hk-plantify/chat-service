@@ -23,7 +23,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         Map<String, WebSocketHandler> map = new HashMap<>();
         map.put("/chat", chatWebSocketHandler);
 
-        return new SimpleUrlHandlerMapping(map, -1);
+        SimpleUrlHandlerMapping mapping = new SimpleUrlHandlerMapping();
+        mapping.setOrder(-1);
+        mapping.setUrlMap(map);
+        return mapping;
     }
 
     @Bean

@@ -20,6 +20,8 @@ public class GrpcConfig {
     public ManagedChannel managedChannel() {
         channel = ManagedChannelBuilder.forTarget(grpcServerAddress)
                 .usePlaintext()
+                .enableRetry()
+                .maxRetryAttempts(3)
                 .build();
         return channel;
     }

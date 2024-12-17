@@ -13,7 +13,6 @@ import org.springframework.web.reactive.socket.WebSocketSession;
 import org.springframework.web.reactive.socket.WebSocketMessage;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.publisher.SignalType;
 
 @Slf4j
 @Component
@@ -21,34 +20,49 @@ import reactor.core.publisher.SignalType;
 public class ChatWebSocketHandler implements WebSocketHandler {
 
     private final ChatService chatService;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
     @Override
     public Mono<Void> handle(WebSocketSession session) {
-        Flux<WebSocketMessage> messageFlux = session.receive()
+        Flux<WebSocketMessage> incomingMessages = session.receive()
                 .map(WebSocketMessage::getPayloadAsText)
-                .flatMap(payload -> {
-                    try {
-                        log.info("payload: {}", payload);
-                        ChatMessage userMessage = objectMapper.readValue(payload, ChatMessage.class);
-                        return chatService.streamResponse(userMessage.getMessage())
-                                .map(reply -> {
-                                    try {
-                                        ChatMessage aiMessage = ChatMessage.builder()
-                                                .sender("AI")
-                                                .message(reply)
-                                                .type(MessageType.CHAT)
-                                                .build();
-                                        return session.textMessage(objectMapper.writeValueAsString(aiMessage));
-                                    } catch (JsonProcessingException e) {
-                                        throw new RuntimeException("JSON 직렬화 실패", e);
-                                    }
-                                });
-                    } catch (Exception e) {
-                        return Mono.error(new RuntimeException("메시지 처리 실패"));
-                    }
-                });
+                .flatMap(payload -> handleMessage(payload, session))
+                .onErrorResume(e -> handleWebSocketError(session, e));
 
-        return session.send(messageFlux.onErrorResume(e -> Mono.empty()));
+        return session.send(incomingMessages);
+    }
+
+    private Flux<WebSocketMessage> handleMessage(String payload, WebSocketSession session) {
+        try {
+            log.info("Received payload: {}", payload);
+            ChatMessage userMessage = objectMapper.readValue(payload, ChatMessage.class);
+
+            return chatService.streamResponse(userMessage.getMessage())
+                    .map(reply -> createWebSocketMessage("AI", reply, MessageType.CHAT, session))
+                    .onErrorResume(e -> Flux.just(createWebSocketMessage("System", "Error in AI service", MessageType.ERROR, session)));
+
+        } catch (JsonProcessingException e) {
+            log.error("Invalid message format", e);
+            return Flux.just(createWebSocketMessage("System", "Invalid message format", MessageType.ERROR, session));
+        }
+    }
+
+    private Flux<WebSocketMessage> handleWebSocketError(WebSocketSession session, Throwable e) {
+        log.error("WebSocket error: ", e);
+        return Flux.just(createWebSocketMessage("System", "An error occurred: " + e.getMessage(), MessageType.ERROR, session));
+    }
+
+    private WebSocketMessage createWebSocketMessage(String sender, String message, MessageType type, WebSocketSession session) {
+        try {
+            ChatMessage chatMessage = ChatMessage.builder()
+                    .sender(sender)
+                    .message(message)
+                    .type(type)
+                    .build();
+            return session.textMessage(objectMapper.writeValueAsString(chatMessage));
+        } catch (JsonProcessingException e) {
+            log.error("Error serializing message", e);
+            return session.textMessage("{\"sender\":\"System\",\"message\":\"Critical error\",\"type\":\"ERROR\"}");
+        }
     }
 }
