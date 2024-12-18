@@ -18,8 +18,9 @@ public class ChatServiceImpl implements ChatService {
     private final ChatServiceGrpc.ChatServiceStub chatServiceStub;
 
     @Override
-    public Flux<String> streamResponse(String userMessage) {
+    public Flux<String> streamResponse(Long userId, String userMessage) {
         ChatRequest request = ChatRequest.newBuilder()
+                .setUserId(userId)
                 .setMessage(userMessage)
                 .setSender("User")
                 .build();

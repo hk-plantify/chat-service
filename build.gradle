@@ -40,10 +40,15 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	testImplementation 'io.projectreactor:reactor-test'
+	implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
+	implementation 'io.github.openfeign:feign-hc5'
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	// security
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'com.github.ulisesbocchio:jasypt-spring-boot-starter:3.0.5'
 	// grpc
 	implementation "com.google.protobuf:protobuf-java-util:3.25.1"
 	implementation 'com.google.protobuf:protobuf-java:4.28.2'
@@ -70,6 +75,12 @@ protobuf {
 		all()*.plugins {
 			grpc {}
 		}
+	}
+}
+
+dependencyManagement {
+	imports {
+		mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
 	}
 }
 

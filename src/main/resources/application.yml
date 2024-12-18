@@ -11,6 +11,10 @@ grpc:
   server:
     address: chat-model.chat.svc.cluster.local:50052
 
+auth:
+  service:
+    url: http://auth-service.auth.svc.cluster.local:8080
+
 client:
   base:
     url: ENC(6glvmh8vfHd2D/ALcgqR+tXcm+DH+AZbkofU7nK5p2eE0RzPXoNE1uHTORYrT/dA)

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.plantify.chat.domain.entity.ChatMessage;
 import com.plantify.chat.domain.entity.MessageType;
+import com.plantify.chat.global.util.UserInfoProvider;
 import com.plantify.chat.service.ChatService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,23 +22,26 @@ public class ChatWebSocketHandler implements WebSocketHandler {
 
     private final ChatService chatService;
     private final ObjectMapper objectMapper;
+    private final UserInfoProvider userInfoProvider;
 
     @Override
     public Mono<Void> handle(WebSocketSession session) {
+        Long userId = userInfoProvider.getUserInfo().userId();
+
         Flux<WebSocketMessage> incomingMessages = session.receive()
                 .map(WebSocketMessage::getPayloadAsText)
-                .flatMap(payload -> handleMessage(payload, session))
+                .flatMap(payload -> handleMessage(payload, session, userId))
                 .onErrorResume(e -> handleWebSocketError(session, e));
 
         return session.send(incomingMessages);
     }
 
-    private Flux<WebSocketMessage> handleMessage(String payload, WebSocketSession session) {
+    private Flux<WebSocketMessage> handleMessage(String payload, WebSocketSession session, Long userId) {
         try {
             log.info("Received payload: {}", payload);
             ChatMessage userMessage = objectMapper.readValue(payload, ChatMessage.class);
 
-            return chatService.streamResponse(userMessage.getMessage())
+            return chatService.streamResponse(userId, userMessage.getMessage())
                     .map(reply -> createWebSocketMessage("AI", reply, MessageType.CHAT, session))
                     .onErrorResume(e -> Flux.just(createWebSocketMessage("System", "Error in AI service", MessageType.ERROR, session)));
 
