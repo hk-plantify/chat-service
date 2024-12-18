@@ -48,7 +48,7 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	// security
 	implementation 'org.springframework.boot:spring-boot-starter-security'
-	implementation 'com.github.ulisesbocchio:jasypt-spring-boot-starter:3.0.5'
+	implementation 'org.springframework.security:spring-security-messaging'
 	// grpc
 	implementation "com.google.protobuf:protobuf-java-util:3.25.1"
 	implementation 'com.google.protobuf:protobuf-java:4.28.2'

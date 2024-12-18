@@ -2,18 +2,23 @@ package com.plantify.chat.websocket;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.plantify.chat.domain.dto.AuthUserResponse;
 import com.plantify.chat.domain.entity.ChatMessage;
 import com.plantify.chat.domain.entity.MessageType;
+import com.plantify.chat.global.exception.ApplicationException;
 import com.plantify.chat.global.util.UserInfoProvider;
 import com.plantify.chat.service.ChatService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.socket.CloseStatus;
 import org.springframework.web.reactive.socket.WebSocketHandler;
 import org.springframework.web.reactive.socket.WebSocketSession;
 import org.springframework.web.reactive.socket.WebSocketMessage;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.Map;
 
 @Slf4j
 @Component
@@ -26,7 +31,17 @@ public class ChatWebSocketHandler implements WebSocketHandler {
 
     @Override
     public Mono<Void> handle(WebSocketSession session) {
-        Long userId = userInfoProvider.getUserInfo().userId();
+        Map<String, Object> attributes = session.getAttributes();
+        AuthUserResponse userInfo;
+
+        try {
+            userInfo = userInfoProvider.getUserInfoFromAttributes(attributes);
+        } catch (ApplicationException e) {
+            log.error("Unauthorized WebSocket connection attempt");
+            return session.close(CloseStatus.NOT_ACCEPTABLE.withReason("Unauthorized"));
+        }
+
+        Long userId = userInfo.userId();
 
         Flux<WebSocketMessage> incomingMessages = session.receive()
                 .map(WebSocketMessage::getPayloadAsText)

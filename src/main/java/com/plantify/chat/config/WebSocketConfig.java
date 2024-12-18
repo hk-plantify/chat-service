@@ -1,6 +1,7 @@
 package com.plantify.chat.config;
 
 import com.plantify.chat.websocket.ChatWebSocketHandler;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.HandlerMapping;
@@ -16,10 +17,13 @@ import java.util.Map;
 
 @Configuration
 @EnableWebFlux
+@RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
+    private final ChatWebSocketHandler chatWebSocketHandler;
+
     @Bean
-    public HandlerMapping webSocketMapping(ChatWebSocketHandler chatWebSocketHandler) {
+    public HandlerMapping webSocketMapping() {
         Map<String, WebSocketHandler> map = new HashMap<>();
         map.put("/chat", chatWebSocketHandler);
 
