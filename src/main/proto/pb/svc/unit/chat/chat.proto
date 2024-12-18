@@ -13,7 +13,6 @@ service ChatService {
 }
 
 message ChatRequest {
-//  int64 userId =  1;
   string message = 1;
   string sender = 2;
 }
