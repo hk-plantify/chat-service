@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ChatMessage {
 
-    private Long userId;
+//    private Long userId;
     private String sender;
     private String message;
     private MessageType type;

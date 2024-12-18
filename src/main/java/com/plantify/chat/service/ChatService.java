@@ -4,5 +4,5 @@ import reactor.core.publisher.Flux;
 
 public interface ChatService {
 
-    Flux<String> streamResponse(Long userId, String userMessage);
+    Flux<String> streamResponse(String userMessage);
 }

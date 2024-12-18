@@ -31,32 +31,32 @@ public class ChatWebSocketHandler implements WebSocketHandler {
 
     @Override
     public Mono<Void> handle(WebSocketSession session) {
-        Map<String, Object> attributes = session.getAttributes();
-        AuthUserResponse userInfo;
+//        Map<String, Object> attributes = session.getAttributes();
+//        AuthUserResponse userInfo;
 
-        try {
-            userInfo = userInfoProvider.getUserInfoFromAttributes(attributes);
-        } catch (ApplicationException e) {
-            log.error("Unauthorized WebSocket connection attempt");
-            return session.close(CloseStatus.NOT_ACCEPTABLE.withReason("Unauthorized"));
-        }
-
-        Long userId = userInfo.userId();
+//        try {
+//            userInfo = userInfoProvider.getUserInfoFromAttributes(attributes);
+//        } catch (ApplicationException e) {
+//            log.error("Unauthorized WebSocket connection attempt");
+//            return session.close(CloseStatus.NOT_ACCEPTABLE.withReason("Unauthorized"));
+//        }
+//
+//        Long userId = userInfo.userId();
 
         Flux<WebSocketMessage> incomingMessages = session.receive()
                 .map(WebSocketMessage::getPayloadAsText)
-                .flatMap(payload -> handleMessage(payload, session, userId))
+                .flatMap(payload -> handleMessage(payload, session))
                 .onErrorResume(e -> handleWebSocketError(session, e));
 
         return session.send(incomingMessages);
     }
 
-    private Flux<WebSocketMessage> handleMessage(String payload, WebSocketSession session, Long userId) {
+    private Flux<WebSocketMessage> handleMessage(String payload, WebSocketSession session) {
         try {
             log.info("Received payload: {}", payload);
             ChatMessage userMessage = objectMapper.readValue(payload, ChatMessage.class);
 
-            return chatService.streamResponse(userId, userMessage.getMessage())
+            return chatService.streamResponse(userMessage.getMessage())
                     .map(reply -> createWebSocketMessage("AI", reply, MessageType.CHAT, session))
                     .onErrorResume(e -> Flux.just(createWebSocketMessage("System", "Error in AI service", MessageType.ERROR, session)));
 
