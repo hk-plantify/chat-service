@@ -1,14 +1,17 @@
 package com.plantify.chat.service;
 
+import com.plantify.chat.domain.entity.SenderType;
 import com.plantify.pb.unit.chat.ChatRequest;
+import com.plantify.pb.unit.chat.ChatResponse;
 import com.plantify.pb.unit.chat.ChatServiceGrpc;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import com.plantify.pb.unit.chat.ChatResponse;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
+
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -21,17 +24,14 @@ public class ChatServiceImpl implements ChatService {
     public Flux<String> streamResponse(String userMessage) {
         ChatRequest request = ChatRequest.newBuilder()
                 .setMessage(userMessage)
-                .setSender("User")
+                .setSender(SenderType.USER.name())
                 .build();
-
-        log.info("gRPC request: {}", userMessage);
 
         return Flux.create(sink -> {
             StreamObserver<ChatResponse> responseObserver = new StreamObserver<>() {
                 @Override
                 public void onNext(ChatResponse response) {
                     if (!sink.isCancelled()) {
-                        log.info("gRPC response: {}", response);
                         sink.next(response.getReply());
                     }
                 }
@@ -46,20 +46,15 @@ public class ChatServiceImpl implements ChatService {
 
                 @Override
                 public void onCompleted() {
-                    if (!sink.isCancelled()) {
-                        log.info("gRPC onCompleted");
-                        sink.complete();
-                    }
+                    log.info("gRPC stream completed");
+                    sink.complete();
                 }
             };
 
-            try {
-                chatServiceStub.streamMessage(request, responseObserver);
-                log.info("gRPC request sent");
-            } catch (Exception e) {
-                log.error("Error sending gRPC request", e);
-                sink.error(e);
-            }
+            chatServiceStub
+                    .withDeadlineAfter(5, TimeUnit.SECONDS)
+                    .streamMessage(request, responseObserver);
+
         }, FluxSink.OverflowStrategy.BUFFER);
     }
 }
